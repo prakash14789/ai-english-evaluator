@@ -6,9 +6,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from stt.whisper_stt import load_whisper_model, transcribe_audio
 from nlp.grammar import evaluate_grammar, correct_grammar
+from utils.question_generator import generate_question
 
 def run_evaluation(audio_path):
     print("--- AI English Evaluator ---")
+    
+    # 0. Generate dynamic question
+    question = generate_question("beginner")
+    print(f"\n[AI] Question: {question}")
     
     # 1. Load Whisper Model
     model = load_whisper_model("base")
