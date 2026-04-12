@@ -9,6 +9,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from stt.whisper_stt import load_whisper_model, transcribe_audio
 from nlp.grammar import evaluate_grammar, correct_grammar
+from utils.question_generator import generate_question
 
 # Page Configuration
 st.set_page_config(
@@ -67,7 +68,26 @@ with st.sidebar:
     st.info("Using Whisper 'Base' model and LanguageTool for high-speed evaluation.")
     if st.button("Clear Cache"):
         st.cache_resource.clear()
+        if "ai_question" in st.session_state:
+            del st.session_state.ai_question
         st.rerun()
+
+# Dynamic Question Section
+if "ai_question" not in st.session_state:
+    with st.spinner("Generating topic..."):
+        st.session_state.ai_question = generate_question("beginner")
+
+st.markdown(f"""
+<div style="background-color: #1e222d; padding: 25px; border-radius: 15px; border: 1px solid #4F8BF9; margin-bottom: 25px;">
+    <h3 style="margin-top: 0; color: #4F8BF9;">AI Topic:</h3>
+    <p style="font-size: 1.3rem; font-weight: 500;">{st.session_state.ai_question}</p>
+    <button style="background: none; border: 1px solid #4F8BF9; color: #4F8BF9; padding: 5px 15px; border-radius: 5px; cursor: pointer;" onclick="window.location.reload();">Get New Topic</button>
+</div>
+""", unsafe_allow_html=True)
+
+if st.button("Get New AI Topic"):
+    del st.session_state.ai_question
+    st.rerun()
 
 # Recording Session
 st.subheader("Step 1: Record your voice")
