@@ -1,58 +1,101 @@
 import os
+import re
 import google.generativeai as genai
 
-# Configure Gemini
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
-    
+
+
 def enhance_speech(text):
     """
-    Improves a raw transcript into a polished, fluent, and professional response.
+    Analyzes spoken English and returns a structured dict with:
+    - original: the raw transcript
+    - mistakes: list of identified errors
+    - improved: the corrected, professional version
+    - score: a realistic score out of 10
     """
+    fallback = {
+        "original": text,
+        "mistakes": ["Could not analyze. API key missing or unavailable."],
+        "improved": text,
+        "score": "N/A"
+    }
 
     if not api_key:
-        return text  # fallback
+        return fallback
 
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
 
-        prompt = f"""
-        You are an expert English communication coach.
+        prompt = f"""You are a strict English speaking evaluator and coach.
 
-        INPUT:
-        "{text}"
+A user spoke the following sentence (converted from speech to text):
 
-        TASK:
-        Rewrite the sentence into a highly fluent, natural, and professional spoken response.
+"{text}"
 
-        STRICT RULES:
-        - You MUST rewrite the sentence (do NOT repeat original)
-        - Improve vocabulary to advanced (IELTS Band 8–9 level)
-        - Fix grammar completely
-        - Make it sound natural, confident, and smooth
-        - Keep the original meaning EXACTLY the same
-        - Expand slightly if needed to sound more complete
-        - Do NOT make it robotic or overly complex
+Your job:
+1. Identify ALL grammar, vocabulary, and fluency mistakes
+2. Rewrite it as a native English speaker would say it at a professional level
+3. Give a realistic score — most spoken sentences score between 3–7
 
-        OUTPUT:
-        Only the improved sentence. No explanation.
-        """
+Return output EXACTLY in this format (no extra text):
 
-        response = model.generate_content(prompt)
+MISTAKES:
+- <mistake 1>
+- <mistake 2>
+- <mistake 3>
 
-        # Safely extract text from response
+IMPROVED:
+<the fully corrected and professional version>
+
+SCORE:
+<number only, out of 10>
+"""
+
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.7,
+                "max_output_tokens": 400
+            }
+        )
+
         try:
-            enhanced = response.text.strip()
+            raw = response.text.strip()
         except (AttributeError, ValueError):
-            return text # Content was likely blocked by safety filters
+            fallback["mistakes"] = ["Safety filter blocked the response."]
+            return fallback
 
-        # Safety: if model returns same text → it means it failed the 'rewrite' instruction
-        if enhanced.lower() == text.lower():
-             return f"Professional version: {text.capitalize()}."
+        # --- Parse the structured response ---
+        mistakes = []
+        improved = text
+        score = "N/A"
 
-        return enhanced
+        # Extract MISTAKES block
+        mistakes_match = re.search(r"MISTAKES:\s*((?:- .+\n?)+)", raw, re.IGNORECASE)
+        if mistakes_match:
+            mistakes_block = mistakes_match.group(1).strip()
+            mistakes = [line.lstrip("- ").strip() for line in mistakes_block.split("\n") if line.strip().startswith("-")]
+
+        # Extract IMPROVED block
+        improved_match = re.search(r"IMPROVED:\s*(.+?)(?=SCORE:|$)", raw, re.IGNORECASE | re.DOTALL)
+        if improved_match:
+            improved = improved_match.group(1).strip()
+
+        # Extract SCORE block
+        score_match = re.search(r"SCORE:\s*(\d+(?:\.\d+)?)", raw, re.IGNORECASE)
+        if score_match:
+            score = score_match.group(1)
+
+        return {
+            "original": text,
+            "mistakes": mistakes if mistakes else ["No specific mistakes identified."],
+            "improved": improved,
+            "score": score
+        }
 
     except Exception as e:
         print(f"❌ Error in Enhancer: {e}")
-        return text
+        fallback["mistakes"] = [f"Error: {e}"]
+        return fallback

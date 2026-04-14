@@ -235,23 +235,56 @@ else:
         st.markdown(f"<div class='metric-card'><div class='result-text'>Avg. Fluency</div><div class='highlight'>{int(avg_wpm)} WPM</div></div>", unsafe_allow_html=True)
 
     st.divider()
-    with st.expander("View Full Interview Transcript"):
+    with st.expander("📋 View Full Interview Transcript & Coaching"):
         for i, (q, r) in enumerate(zip(st.session_state.questions, st.session_state.responses)):
             st.markdown(f"**Q{i+1}:** {q}")
-            st.markdown(f"*Your Answer:* {r}")
-            
-            # Show polished version if available
+            st.markdown(f"🗣️ **Your Answer:** {r}")
+
+            # Show structured enhancement if available
             if i < len(st.session_state.evals):
-                polished = st.session_state.evals[i].get("polished", "")
-                if polished:
+                enhancement = st.session_state.evals[i].get("polished", {})
+                if isinstance(enhancement, dict):
+                    # --- Mistakes ---
+                    mistakes = enhancement.get("mistakes", [])
+                    if mistakes:
+                        mistakes_html = "".join([f"<li>{m}</li>" for m in mistakes])
+                        st.markdown(f"""
+                        <div style="background-color: #3b1c1c; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #e74c3c;">
+                            <p style="margin: 0 0 8px 0; font-weight: bold; color: #e74c3c;">❌ Mistakes Found:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #f5a5a5;">{mistakes_html}</ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # --- Improved Version ---
+                    improved = enhancement.get("improved", "")
+                    if improved and improved != r:
+                        st.markdown(f"""
+                        <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
+                            <p style="margin: 0 0 8px 0; font-weight: bold; color: #2ecc71;">🏆 10/10 Professional Version:</p>
+                            <p style="margin: 0; font-style: italic; font-size: 1.05rem;">{improved}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # --- Score ---
+                    score = enhancement.get("score", "N/A")
                     st.markdown(f"""
-                    <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
-                        <p style="margin: 0; font-weight: bold; color: #2ecc71;">🏆 The 10/10 Version ("Perfect Speech"):</p>
-                        <p style="margin: 5px 0 0 0; font-style: italic;">{polished}</p>
+                    <div style="background-color: #1a1f2e; padding: 10px 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #4F8BF9; display: inline-block;">
+                        <span style="color: #8892b0;">AI Speech Score for this answer: </span>
+                        <span style="color: #4F8BF9; font-weight: bold; font-size: 1.1rem;">{score}/10</span>
                     </div>
                     """, unsafe_allow_html=True)
-            
+
+                elif isinstance(enhancement, str) and enhancement:
+                    # Fallback for old plain-string format
+                    st.markdown(f"""
+                    <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
+                        <p style="margin: 0; font-weight: bold; color: #2ecc71;">🏆 10/10 Professional Version:</p>
+                        <p style="margin: 5px 0 0 0; font-style: italic;">{enhancement}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
             st.markdown("---")
+
 
 # Footer
 st.markdown("---")
