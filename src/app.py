@@ -13,6 +13,8 @@ from nlp.vocabulary import analyze_vocabulary
 from nlp.archetype import determine_archetype
 from scoring.fluency import calculate_fluency
 from utils.question_generator import generate_questions
+from nlp.enhancer import enhance_speech
+
 
 # Page Configuration
 st.set_page_config(
@@ -167,13 +169,15 @@ elif st.session_state.current_q_index < TOTAL_QUESTIONS:
                         grammar_result = evaluate_grammar(text)
                         vocab_result = analyze_vocabulary(text)
                         fluency_result = calculate_fluency(transcription)
+                        polished_text = enhance_speech(text)
                         
                         # Store in session
                         st.session_state.responses.append(text)
                         st.session_state.evals.append({
                             "grammar": grammar_result,
                             "vocab": vocab_result,
-                            "fluency": fluency_result
+                            "fluency": fluency_result,
+                            "polished": polished_text
                         })
                         
                         # Move to next
@@ -233,6 +237,18 @@ else:
         for i, (q, r) in enumerate(zip(st.session_state.questions, st.session_state.responses)):
             st.markdown(f"**Q{i+1}:** {q}")
             st.markdown(f"*Your Answer:* {r}")
+            
+            # Show polished version if available
+            if i < len(st.session_state.evals):
+                polished = st.session_state.evals[i].get("polished", "")
+                if polished:
+                    st.markdown(f"""
+                    <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
+                        <p style="margin: 0; font-weight: bold; color: #2ecc71;">🌟 The "Great Speech" Version:</p>
+                        <p style="margin: 5px 0 0 0; font-style: italic;">{polished}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
             st.markdown("---")
 
 # Footer
