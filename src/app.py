@@ -149,7 +149,9 @@ elif st.session_state.current_q_index < TOTAL_QUESTIONS:
         recording_color="#e74c3c",
         neutral_color="#4F8BF9",
         icon_name="microphone",
-        icon_size="3x"
+        icon_size="3x",
+        pause_threshold=20.0,
+        key=f"recorder_{q_idx}"
     )
 
     if audio_bytes:
