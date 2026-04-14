@@ -5,43 +5,54 @@ import google.generativeai as genai
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
-
+    
 def enhance_speech(text):
     """
-    Takes a raw transcript and transforms it into a polished, professional, 
-    and impactful version while preserving the original meaning.
+    Improves a raw transcript into a polished, fluent, and professional response.
     """
+
     if not api_key:
-        return text # Fallback
+        return text  # fallback
 
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
-        
+
         prompt = f"""
-        Raw Transcript (Potentially broken or incorrect): "{text}"
+        You are an expert English communication coach.
 
-        Task: Transform this into a "Perfect 10/10 Spoken Response".
-        - FIX ALL GRAMMAR ERRORS.
-        - If the transcript is a fragment (e.g., missing a verb or subject), RECONSTRUCT it into a complete, sophisticated sentence.
-        - Use "IELTS Band 9" vocabulary and natural flow.
-        - Keep the original intention but make it sound intelligent and professional.
-        
-        Example: 
-        Raw: "I working data science because like code." 
-        10/10: "I am currently employed in the field of data science, a career I pursued primarily due to my profound passion for programming and problem-solving."
+        INPUT:
+        "{text}"
 
-        Output ONLY the perfected text. No explanations.
+        TASK:
+        Rewrite the sentence into a highly fluent, natural, and professional spoken response.
+
+        STRICT RULES:
+        - You MUST rewrite the sentence (do NOT repeat original)
+        - Improve vocabulary to advanced (IELTS Band 8–9 level)
+        - Fix grammar completely
+        - Make it sound natural, confident, and smooth
+        - Keep the original meaning EXACTLY the same
+        - Expand slightly if needed to sound more complete
+        - Do NOT make it robotic or overly complex
+
+        OUTPUT:
+        Only the improved sentence. No explanation.
         """
 
         response = model.generate_content(prompt)
-        enhanced_text = response.text.strip()
-        
-        return enhanced_text
-    except Exception as e:
-        print(f"Error enhancing speech: {e}")
-        return text
 
-if __name__ == "__main__":
-    test_text = "I like coding because it is fun and I can make things that help people."
-    print("Original:", test_text)
-    print("Enhanced:", enhance_speech(test_text))
+        # Safely extract text from response
+        try:
+            enhanced = response.text.strip()
+        except (AttributeError, ValueError):
+            return text # Content was likely blocked by safety filters
+
+        # Safety: if model returns same text → it means it failed the 'rewrite' instruction
+        if enhanced.lower() == text.lower():
+             return f"Professional version: {text.capitalize()}."
+
+        return enhanced
+
+    except Exception as e:
+        print(f"❌ Error in Enhancer: {e}")
+        return text
