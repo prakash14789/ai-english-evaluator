@@ -2,9 +2,6 @@ import os
 import re
 import google.generativeai as genai
 
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
 
 
 def enhance_speech(text):
@@ -15,9 +12,14 @@ def enhance_speech(text):
     - improved: the corrected, professional version
     - score: a realistic score out of 10
     """
+    # Read API key fresh every call to avoid stale module-level None
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+
     fallback = {
         "original": text,
-        "mistakes": ["Could not analyze. API key missing or unavailable."],
+        "mistakes": ["Could not analyze. GEMINI_API_KEY is not set in your environment."],
         "improved": text,
         "score": "N/A"
     }

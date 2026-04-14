@@ -36,3 +36,6 @@ sample.wav
 .cache/
 data/
 models/
+
+# Secrets - never commit the API key
+.env
