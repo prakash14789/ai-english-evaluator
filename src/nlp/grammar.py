@@ -17,9 +17,20 @@ def evaluate_grammar(text):
     print("Evaluating grammar...")
     matches = tool.check(text)
     
-    # Calculate score based on number of errors
+    # Base score
     num_errors = len(matches)
-    score = max(0, 10 - num_errors)
+    score = 10 - (num_errors * 1.5) # More strict penalty
+    
+    # Penalty for fragments (very short text with no main verb or bad structure)
+    words = text.split()
+    if len(words) < 5:
+        score -= 2
+    
+    # Check for basic structure issues not caught by Tool (like starting with "because")
+    if text.lower().strip().startswith("because"):
+        score -= 1.5
+        
+    score = max(0, min(10, round(score, 1)))
     
     return {
         "score": score,

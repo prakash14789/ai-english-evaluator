@@ -18,15 +18,19 @@ def enhance_speech(text):
         model = genai.GenerativeModel("gemini-1.5-flash")
         
         prompt = f"""
-        Original Spoken Text: "{text}"
+        Raw Transcript (Potentially broken or incorrect): "{text}"
 
-        Task: Rewrite this spoken response to be a "Perfect 10/10 English Speech". 
-        - Use advanced, high-level vocabulary and natural idioms.
-        - Ensure rhythmic sentence variety and professional impact.
-        - Maintain the core message but express it with maximum clarity and elegance.
-        - This should be the version that would get a perfect score in an English proficiency exam.
+        Task: Transform this into a "Perfect 10/10 Spoken Response".
+        - FIX ALL GRAMMAR ERRORS.
+        - If the transcript is a fragment (e.g., missing a verb or subject), RECONSTRUCT it into a complete, sophisticated sentence.
+        - Use "IELTS Band 9" vocabulary and natural flow.
+        - Keep the original intention but make it sound intelligent and professional.
         
-        Output ONLY the perfected text. No quotes, no intro, no "Here is your text".
+        Example: 
+        Raw: "I working data science because like code." 
+        10/10: "I am currently employed in the field of data science, a career I pursued primarily due to my profound passion for programming and problem-solving."
+
+        Output ONLY the perfected text. No explanations.
         """
 
         response = model.generate_content(prompt)
