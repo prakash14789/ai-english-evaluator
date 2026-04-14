@@ -12,7 +12,7 @@ from nlp.grammar import evaluate_grammar, correct_grammar
 from nlp.vocabulary import analyze_vocabulary
 from nlp.archetype import determine_archetype
 from scoring.fluency import calculate_fluency
-from utils.question_generator import generate_question
+from utils.question_generator import generate_questions
 
 # Page Configuration
 st.set_page_config(
@@ -123,8 +123,8 @@ if not st.session_state.session_active:
     """)
     if st.button("🚀 Start Interview Session"):
         st.session_state.session_active = True
-        with st.spinner("Preparing your first topic..."):
-            st.session_state.questions = [generate_question("intermediate") for _ in range(TOTAL_QUESTIONS)]
+        with st.spinner("Preparing interesting topics..."):
+            st.session_state.questions = generate_questions(count=TOTAL_QUESTIONS, level="intermediate")
         st.rerun()
 
 # Logic: Interview Phase
@@ -184,6 +184,10 @@ elif st.session_state.current_q_index < TOTAL_QUESTIONS:
                 finally:
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
+    else:
+        # Guidance for the 20-second timer
+        st.markdown("<p style='color: #4F8BF9; font-weight: bold;'>⏱️ Speaking Guide: 20 Seconds</p>", unsafe_allow_html=True)
+        st.info("Tip: Aim to speak for at least 20 seconds to give the AI enough material for a deep analysis!")
 
 # Logic: Results Phase
 else:
