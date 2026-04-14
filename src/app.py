@@ -244,7 +244,7 @@ else:
                 if polished:
                     st.markdown(f"""
                     <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
-                        <p style="margin: 0; font-weight: bold; color: #2ecc71;">🌟 The "Great Speech" Version:</p>
+                        <p style="margin: 0; font-weight: bold; color: #2ecc71;">🏆 The 10/10 Version ("Perfect Speech"):</p>
                         <p style="margin: 5px 0 0 0; font-style: italic;">{polished}</p>
                     </div>
                     """, unsafe_allow_html=True)

@@ -20,13 +20,13 @@ def enhance_speech(text):
         prompt = f"""
         Original Spoken Text: "{text}"
 
-        Task: Rewrite this spoken response to be "Great Speech". 
-        - Use sophisticated vocabulary and professional idioms.
-        - Improve sentence structure and flow.
-        - Keep the original meaning and core message.
-        - Make it sound natural for a high-level English speaker.
+        Task: Rewrite this spoken response to be a "Perfect 10/10 English Speech". 
+        - Use advanced, high-level vocabulary and natural idioms.
+        - Ensure rhythmic sentence variety and professional impact.
+        - Maintain the core message but express it with maximum clarity and elegance.
+        - This should be the version that would get a perfect score in an English proficiency exam.
         
-        Output ONLY the enhanced text. Do not add explanations or quotes.
+        Output ONLY the perfected text. No quotes, no intro, no "Here is your text".
         """
 
         response = model.generate_content(prompt)
