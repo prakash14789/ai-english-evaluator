@@ -130,7 +130,7 @@ def generate_questions(count=3, level="intermediate"):
     seed = random.randint(1, 10000)
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-flash-latest")
 
         prompt = f"""
         Seed: {seed}
@@ -167,7 +167,7 @@ def generate_questions(count=3, level="intermediate"):
         return questions[:count]
 
     except Exception as e:
-        print(f"❌ Error generating questions: {e}")
+        print(f"Error generating questions: {e}")
 
         random.shuffle(FALLBACK_QUESTIONS)
         return FALLBACK_QUESTIONS[:count]

@@ -6,7 +6,7 @@ import tempfile
 from dotenv import load_dotenv
 
 # Load .env file — ensures GEMINI_API_KEY is always available
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"), override=True)
 
 # Add src to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

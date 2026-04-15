@@ -28,7 +28,7 @@ def enhance_speech(text):
         return fallback
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-flash-latest")
 
         prompt = f"""You are a strict English speaking evaluator and coach.
 
@@ -98,6 +98,6 @@ SCORE:
         }
 
     except Exception as e:
-        print(f"❌ Error in Enhancer: {e}")
+        print(f"Error in Enhancer: {e}")
         fallback["mistakes"] = [f"Error: {e}"]
         return fallback
