@@ -175,7 +175,7 @@ elif st.session_state.current_q_index < TOTAL_QUESTIONS:
                         grammar_result = evaluate_grammar(text)
                         vocab_result = analyze_vocabulary(text)
                         fluency_result = calculate_fluency(transcription)
-                        polished_text = enhance_speech(text)
+                        polished_text = enhance_speech(text, question=current_q)
                         
                         # Store in session
                         st.session_state.responses.append(text)
@@ -256,6 +256,17 @@ else:
                         <div style="background-color: #3b1c1c; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #e74c3c;">
                             <p style="margin: 0 0 8px 0; font-weight: bold; color: #e74c3c;">❌ Mistakes Found:</p>
                             <ul style="margin: 0; padding-left: 20px; color: #f5a5a5;">{mistakes_html}</ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # --- Relevancy Feedback ---
+                    relevancy = enhancement.get("relevancy", "")
+                    if relevancy:
+                        relevancy_color = "#2ecc71" if "excellent" in relevancy.lower() or "relevant" in relevancy.lower() else "#e67e22"
+                        st.markdown(f"""
+                        <div style="background-color: #1a1f2e; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid {relevancy_color};">
+                            <p style="margin: 0 0 8px 0; font-weight: bold; color: {relevancy_color};">🎯 Topic Relevancy:</p>
+                            <p style="margin: 0; color: #dcdde1; font-style: italic;">{relevancy}</p>
                         </div>
                         """, unsafe_allow_html=True)
 
