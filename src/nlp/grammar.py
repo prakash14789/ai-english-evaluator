@@ -32,9 +32,13 @@ def evaluate_grammar(text):
         
     score = max(0, min(10, round(score, 1)))
     
+    # Get the full corrected text
+    corrected_text = tool.correct(text)
+    
     return {
         "score": score,
-        "errors": [match.message for match in matches],
+        "errors": [f"Issue: '{match.message}' (Suggestion: {match.replacements[0] if match.replacements else 'N/A'})" for match in matches],
+        "corrected_text": corrected_text,
         "num_errors": num_errors
     }
 

@@ -37,18 +37,19 @@ A user spoke the following sentence (converted from speech to text):
 "{text}"
 
 Your job:
-1. Identify ALL grammar, vocabulary, and fluency mistakes. For each mistake, explicitly quote the incorrect part they said, and provide the completely corrected phrase or sentence. Do not just return the corrected word in isolation.
-2. Rewrite it as a native English speaker would say it at a professional level
-3. Give a realistic score — most spoken sentences score between 3–7
+1. Identify ALL grammar, vocabulary, and fluency mistakes. 
+2. For each mistake, explicitly quote what they said, and provide the ENTIRE sentence corrected. Do not just return the corrected word or phrase in isolation.
+3. Rewrite the entire response as a native English speaker would say it at a professional level (this goes in the IMPROVED section).
+4. Give a realistic score — most spoken sentences score between 3–7.
 
 Return output EXACTLY in this format (no extra text):
 
 MISTAKES:
-- [You said: "incorrect part"] -> [Corrected: "full corrected phrase or sentence"]
-- [You said: "incorrect part"] -> [Corrected: "full corrected phrase or sentence"]
+- [You said: "part of sentence"] -> [Full Corrected Sentence: "the entire sentence corrected"]
+- [You said: "part of sentence"] -> [Full Corrected Sentence: "the entire sentence corrected"]
 
 IMPROVED:
-<the fully corrected and professional version>
+<the fully corrected and professional version of the whole text>
 
 SCORE:
 <number only, out of 10>

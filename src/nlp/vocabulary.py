@@ -27,7 +27,7 @@ def analyze_vocabulary(text):
 
         Provide the analysis in JSON format with the following keys:
         - "level": The estimated CEFR level (A1, A2, B1, B2, C1, or C2).
-        - "suggestions": A list of objects, each with "original" (the simple word used) and "improved" (a more sophisticated synonym). Focus on 2-3 key improvements.
+        - "suggestions": A list of objects, each with "original" (the simple word used), "improved" (a more sophisticated synonym), and "improved_sentence" (the entire original sentence updated with the improved word). Focus on 2-3 key improvements.
         - "feedback": A brief 1-sentence observation about the word choice.
 
         Output ONLY the JSON.

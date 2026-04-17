@@ -259,6 +259,18 @@ else:
                         </div>
                         """, unsafe_allow_html=True)
 
+                    # --- Vocabulary Suggestions ---
+                    vocab = st.session_state.evals[i].get("vocab", {})
+                    suggestions = vocab.get("suggestions", [])
+                    if suggestions:
+                        vocab_html = "".join([f"<li><b>'{s['original']}'</b> → <b>'{s['improved']}'</b><br><small>Sentence: {s.get('improved_sentence', 'N/A')}</small></li>" for s in suggestions])
+                        st.markdown(f"""
+                        <div style="background-color: #1a1f2e; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #f1c40f;">
+                            <p style="margin: 0 0 8px 0; font-weight: bold; color: #f1c40f;">💡 Vocabulary Upgrades:</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #dcdde1; list-style-type: none;">{vocab_html}</ul>
+                        </div>
+                        """, unsafe_allow_html=True)
+
                     # --- Improved Version ---
                     improved = enhancement.get("improved", "")
                     if improved and improved != r:
