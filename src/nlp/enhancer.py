@@ -23,7 +23,7 @@ def enhance_speech(text, question=None):
         "mistakes": ["Could not analyze. GEMINI_API_KEY is not set in your environment."],
         "improved": text,
         "relevancy": "Analysis skipped.",
-        "score": "N/A"
+        "score": "0"
     }
 
     if not api_key:
@@ -61,7 +61,7 @@ IMPROVED:
 <the fully corrected and professional version of the whole text (or a perfect sample answer if original was off-topic)>
 
 SCORE:
-<number only, out of 10>
+<A single number from 1 to 10. Do NOT write "N/A". Even if the answer is short, give a score based on what was said.>
 """
 
         response = model.generate_content(
@@ -100,10 +100,20 @@ SCORE:
         if improved_match:
             improved = improved_match.group(1).strip()
 
-        # Extract SCORE block
+        # Extract SCORE block - handles "SCORE: 7", "Score: 7/10", "SCORE: 7.5" etc.
         score_match = re.search(r"SCORE:\s*(\d+(?:\.\d+)?)", raw, re.IGNORECASE)
         if score_match:
             score = score_match.group(1)
+        else:
+            # Secondary check for just "Score: 7"
+            score_match = re.search(r"Score:\s*(\d+(?:\.\d+)?)", raw, re.IGNORECASE)
+            if score_match:
+                score = score_match.group(1)
+
+        # Final Cleanup: If score is still not a number, default to 5 to avoid display issues
+        if not str(score).replace('.', '', 1).isdigit():
+            score = "5"
+            mistakes.append("Note: Speech score calculation was approximate due to formatting.")
 
         return {
             "original": text,

@@ -31,15 +31,30 @@ def calculate_fluency(transcription_result):
     # 3. Calculate WPM
     wpm = int((word_count / duration_sec) * 60)
 
-    # 4. Detect Filler Words
-    # Common English fillers
+    # 4. Timeline Analysis (for Graphing)
+    timeline_data = []
+    blank_spots = 0
+    
+    for i, seg in enumerate(segments):
+        seg_text = seg.get("text", "").strip()
+        seg_words = len(seg_text.split())
+        seg_duration = seg["end"] - seg["start"]
+        
+        # Calculate WPM for this segment
+        seg_wpm = int((seg_words / max(0.1, seg_duration)) * 60)
+        timeline_data.append({"time": seg["start"], "wpm": seg_wpm})
+        
+        # Detect Blanks (pauses between segments)
+        if i > 0:
+            pause = seg["start"] - segments[i-1]["end"]
+            if pause > 1.5: # 1.5 seconds is a significant blank
+                blank_spots += 1
+
+    # 5. Detect Filler Words
     fillers = ["um", "uh", "ah", "er", "like", "you know", "actually", "basically", "literally"]
     detected_fillers = []
-    
-    # Case insensitive search
     text_lower = text.lower()
     for filler in fillers:
-        # Use regex to find word boundaries
         matches = re.findall(rf"\b{re.escape(filler)}\b", text_lower)
         if matches:
             for _ in range(len(matches)):
@@ -48,9 +63,11 @@ def calculate_fluency(transcription_result):
     return {
         "wpm": wpm,
         "filler_count": len(detected_fillers),
-        "filler_list": list(set(detected_fillers)), # Unique list for display
+        "filler_list": list(set(detected_fillers)),
         "duration_sec": round(duration_sec, 2),
-        "word_count": word_count
+        "word_count": word_count,
+        "timeline": timeline_data,
+        "blank_spots": blank_spots
     }
 
 if __name__ == "__main__":
