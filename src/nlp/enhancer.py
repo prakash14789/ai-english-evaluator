@@ -1,6 +1,16 @@
 import os
 import re
 import google.generativeai as genai
+from .local_evaluator import LocalEnglishEvaluator
+
+# Initialize local evaluator lazily
+_local_eval_instance = None
+
+def get_local_evaluator():
+    global _local_eval_instance
+    if _local_eval_instance is None:
+        _local_eval_instance = LocalEnglishEvaluator()
+    return _local_eval_instance
 
 
 
@@ -26,8 +36,23 @@ def enhance_speech(text, question=None):
         "score": "0"
     }
 
-    if not api_key:
-        return fallback
+    # Decide whether to use local model or API
+    use_local = os.getenv("USE_LOCAL_MODEL", "false").lower() == "true"
+    
+    if not api_key or use_local:
+        if not use_local:
+            print("GEMINI_API_KEY not found. Using local AI model for evaluation...")
+        else:
+            print("USE_LOCAL_MODEL is set. Using local AI model...")
+            
+        try:
+            local_eval = get_local_evaluator()
+            return local_eval.evaluate(text, question)
+        except Exception as e:
+            print(f"Local model error: {e}")
+            if not api_key:
+                return fallback
+            # If local fails but API key exists, continue to API below
 
     try:
         model = genai.GenerativeModel("gemini-flash-latest")
