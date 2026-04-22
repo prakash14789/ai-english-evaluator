@@ -18,7 +18,7 @@ def evaluate_grammar(text):
     """
     Evaluates grammar using either rule-based LanguageTool or Local AI Model.
     """
-    use_local = os.getenv("USE_LOCAL_MODEL", "false").lower() == "true"
+    use_local = os.getenv("USE_LOCAL_MODEL", "true").lower() == "true"
     
     if use_local:
         print("Using local AI model for grammar evaluation...")
