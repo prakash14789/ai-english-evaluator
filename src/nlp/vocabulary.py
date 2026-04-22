@@ -1,16 +1,15 @@
 import os
-import google.generativeai as genai
 import json
-
-# Configure the Gemini API
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
 
 def analyze_vocabulary(text):
     """
     Analyze the vocabulary complexity and provide suggestions using Gemini.
     """
+    import google.generativeai as genai
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+
     if not api_key:
         return {
             "level": "Unknown",
@@ -34,7 +33,6 @@ def analyze_vocabulary(text):
         """
 
         response = model.generate_content(prompt)
-        # Clean response text in case of markdown formatting
         response_text = response.text.strip()
         if response_text.startswith("```json"):
             response_text = response_text.replace("```json", "").replace("```", "").strip()
@@ -47,7 +45,3 @@ def analyze_vocabulary(text):
             "suggestions": [],
             "feedback": "Could not perform deep analysis at this time."
         }
-
-if __name__ == "__main__":
-    test_text = "I think it is very good because I can do it easily."
-    print(analyze_vocabulary(test_text))

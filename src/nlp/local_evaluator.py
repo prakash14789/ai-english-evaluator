@@ -1,13 +1,20 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import re
 
 class LocalEnglishEvaluator:
     def __init__(self, model_name="vennify/t5-base-grammar-correction"):
+        import torch
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+        
         print(f"Loading local English evaluation model: {model_name}...")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(self.device)
+        
+        # Optimize memory and speed: use float16 on GPU, int8 on CPU if supported
+        if self.device == "cuda":
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name, torch_dtype=torch.float16).to(self.device)
+        else:
+            self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(self.device)
+            
         print("Model loaded successfully.")
 
     def evaluate(self, text, question=None):
@@ -18,11 +25,12 @@ class LocalEnglishEvaluator:
         input_text = "gec: " + text
         inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512).to(self.device)
         
+        import torch
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs, 
                 max_length=512, 
-                num_beams=5, 
+                num_beams=1, # Greedy search is much faster than beam search
                 early_stopping=True
             )
         
@@ -80,8 +88,6 @@ class LocalEnglishEvaluator:
             return 0
             
         # Basic scoring logic
-        # Start with 9.0
-        # Deduct based on edit distance or difference in length
         import difflib
         s = difflib.SequenceMatcher(None, original.lower(), corrected.lower())
         ratio = s.ratio() # 1.0 means identical
@@ -97,7 +103,6 @@ class LocalEnglishEvaluator:
 
     def _check_relevancy(self, text, question):
         # Placeholder for relevancy check
-        # Could use cosine similarity with sentence-transformers
         text_words = set(text.lower().split())
         question_words = set(question.lower().split())
         

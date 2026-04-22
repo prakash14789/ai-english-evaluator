@@ -109,13 +109,13 @@ st.markdown("""
 # Title and Header
 st.title("🎙️ AI English Evaluator")
 
-# Load Models
+# Load Models and Resource Caching
 @st.cache_resource
-def get_models():
-    model = load_whisper_model("base")
-    return model
+def get_whisper_model():
+    return load_whisper_model("base")
 
-model = get_models()
+# Pre-load the models to a cached object
+whisper_model = get_whisper_model()
 
 # Sidebar
 with st.sidebar:
@@ -202,7 +202,8 @@ if st.session_state.app_mode == "Interview Session":
                         temp_path = temp_audio.name
                     
                     try:
-                        transcription = transcribe_audio(model, temp_path)
+                        # Use the cached model
+                        transcription = transcribe_audio(whisper_model, temp_path)
                         if transcription and transcription["text"].strip():
                             text = transcription["text"].strip()
                             

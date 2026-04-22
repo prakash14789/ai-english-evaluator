@@ -1,16 +1,15 @@
 import os
-import google.generativeai as genai
 import json
-
-# Configure the Gemini API
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
 
 def determine_archetype(all_responses):
     """
     Analyze multiple responses to determine a user's English speaking archetype.
     """
+    import google.generativeai as genai
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        genai.configure(api_key=api_key)
+
     default_data = {
         "archetype": "The Communicator",
         "description": "A speaker who focuses on getting the message across effectively.",
@@ -52,7 +51,6 @@ def determine_archetype(all_responses):
             
         data = json.loads(response_text)
         
-        # Ensure all keys exist
         return {
             "archetype": data.get("archetype", default_data["archetype"]),
             "description": data.get("description", default_data["description"]),
