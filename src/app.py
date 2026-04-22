@@ -170,7 +170,7 @@ if st.session_state.app_mode == "Interview Session":
             """, unsafe_allow_html=True)
             
             if os.path.exists(task['image_path']):
-                st.image(task['image_path'], use_column_width=True)
+                st.image(task['image_path'], use_container_width=True)
             
             instruction_for_ai = f"Image description task. Instruction: {task['instruction']}. Scene details: {task['prompt_for_ai']}"
         else:

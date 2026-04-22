@@ -1,12 +1,16 @@
 import os
-import language_tool_python
 from .local_evaluator import LocalEnglishEvaluator
 
-# Initialize rule-based tool as secondary/fallback
-tool = language_tool_python.LanguageTool('en-US')
-
-# Lazy initialize local evaluator
+# Initialize instruments lazily
+_rule_tool = None
 _local_evaluator = None
+
+def get_rule_tool():
+    global _rule_tool
+    if _rule_tool is None:
+        import language_tool_python
+        _rule_tool = language_tool_python.LanguageTool('en-US')
+    return _rule_tool
 
 def get_local_evaluator():
     global _local_evaluator
@@ -42,6 +46,7 @@ def evaluate_grammar(text):
 
     # Rule-based Fallback (LanguageTool)
     print("Evaluating with rule-based LanguageTool...")
+    tool = get_rule_tool()
     matches = tool.check(text)
     num_errors = len(matches)
     score = 10 - (num_errors * 1.5)
@@ -65,11 +70,3 @@ def evaluate_grammar(text):
 def correct_grammar(text):
     result = evaluate_grammar(text)
     return result["corrected_text"]
-
-if __name__ == "__main__":
-    sentence = "She go to school yesterday"
-    result = evaluate_grammar(sentence)
-    print("\n=== Grammar Result ===")
-    print("Original:", sentence)
-    print("Score:", result["score"], "/10")
-    print("Corrected:", result["corrected_text"])

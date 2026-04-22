@@ -21,20 +21,37 @@ class LocalEnglishEvaluator:
         """
         Analyzes the text locally and returns structured feedback.
         """
-        # 1. Grammar Correction
-        input_text = "gec: " + text
-        inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512).to(self.device)
+        if not text.strip():
+            return {
+                "original": "",
+                "mistakes": [],
+                "improved": "",
+                "relevancy": "No input detected.",
+                "score": "0"
+            }
+
+        # Split text into sentences for better T5 performance if it's very long
+        # T5-base-gec works best on single sentences
+        sentences = re.split(r'(?<=[.!?]) +', text)
+        improved_sentences = []
         
         import torch
-        with torch.no_grad():
-            outputs = self.model.generate(
-                **inputs, 
-                max_length=512, 
-                num_beams=1, # Greedy search is much faster than beam search
-                early_stopping=True
-            )
+        for sentence in sentences:
+            if not sentence.strip(): continue
+            input_text = "gec: " + sentence
+            inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True, max_length=128).to(self.device)
+            
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs, 
+                    max_length=128, 
+                    num_beams=2, # Small beam for better quality than greedy without high cost
+                    repetition_penalty=1.2, # Prevent loops/repetition
+                    early_stopping=True
+                )
+            improved_sentences.append(self.tokenizer.decode(outputs[0], skip_special_tokens=True))
         
-        improved_text = self.tokenizer.decode(outputs[0], skip_special_code=True, skip_special_tokens=True)
+        improved_text = " ".join(improved_sentences).strip()
         
         # 2. Identify Mistakes (Simplified comparison)
         mistakes = self._extract_mistakes(text, improved_text)
@@ -42,7 +59,7 @@ class LocalEnglishEvaluator:
         # 3. Scoring (Heuristic based on diff and length)
         score = self._calculate_score(text, improved_text)
         
-        # 4. Relevancy (Simple keyword matching or semantic similarity if library available)
+        # 4. Relevancy
         relevancy = "Excellent, you answered the topic." if not question else self._check_relevancy(text, question)
 
         return {
