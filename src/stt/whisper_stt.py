@@ -9,7 +9,7 @@ import os
 import torch
 
 # Load model (GPU if available, else CPU)
-def load_whisper_model(model_size="base"):
+def load_whisper_model(model_size="tiny"):
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
@@ -39,7 +39,7 @@ def transcribe_audio(model, file_path):
 
         if HAS_FASTER_WHISPER and isinstance(model, WhisperModel):
             # faster-whisper returns a generator of segments
-            segments, info = model.transcribe(file_path, beam_size=5)
+            segments, info = model.transcribe(file_path, beam_size=1)
             
             segments_list = []
             full_text = ""
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         audio_file = os.path.join(root_dir, "sample.wav")
 
-    model = load_whisper_model("base")
+    model = load_whisper_model("tiny")
 
     if model:
         output = transcribe_audio(model, audio_file)

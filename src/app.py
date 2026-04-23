@@ -112,7 +112,7 @@ st.title("🎙️ AI English Evaluator")
 # Load Models and Resource Caching
 @st.cache_resource
 def get_whisper_model():
-    return load_whisper_model("base")
+    return load_whisper_model("tiny")
 
 # Pre-load the models to a cached object
 whisper_model = get_whisper_model()

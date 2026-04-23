@@ -1,7 +1,7 @@
 import re
 
 class LocalEnglishEvaluator:
-    def __init__(self, model_name="vennify/t5-base-grammar-correction"):
+    def __init__(self, model_name="AventIQ-AI/T5-small-grammar-correction"):
         import torch
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
         
@@ -45,7 +45,7 @@ class LocalEnglishEvaluator:
                 outputs = self.model.generate(
                     **inputs, 
                     max_length=128, 
-                    num_beams=2, # Small beam for better quality than greedy without high cost
+                    num_beams=1, # Greedy search for maximum speed
                     repetition_penalty=1.2, # Prevent loops/repetition
                     early_stopping=True
                 )
