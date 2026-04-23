@@ -28,6 +28,8 @@ def clean_questions(raw_text):
             questions.append(q)
     return list(dict.fromkeys(questions))
 
+import google.generativeai as genai
+
 def generate_questions(count=3, level="intermediate"):
     """
     Generate unique spoken English questions using Gemini.
@@ -38,30 +40,20 @@ def generate_questions(count=3, level="intermediate"):
         random.shuffle(FALLBACK_QUESTIONS)
         return FALLBACK_QUESTIONS[:count]
 
-    # Deferred import for speed
-    import google.generativeai as genai
     genai.configure(api_key=api_key)
-    
     seed = random.randint(1, 10000)
 
     try:
         model = genai.GenerativeModel("gemini-flash-latest")
-        prompt = f"""
-        Seed: {seed}
-        Generate {count} UNIQUE conversational English interview questions for a {level} learner.
-        One question per line. No numbering.
-        """
+        prompt = f"Seed: {seed}. List {count} unique conversational English questions for a {level} learner. One per line."
+        
         response = model.generate_content(prompt)
-        if not response.text:
-            raise ValueError("Empty response")
-
         questions = clean_questions(response.text)
+        
         if len(questions) < count:
             random.shuffle(FALLBACK_QUESTIONS)
-            for q in FALLBACK_QUESTIONS:
-                if q not in questions:
-                    questions.append(q)
-                if len(questions) >= count: break
+            questions.extend(FALLBACK_QUESTIONS[:count-len(questions)])
+            
         return questions[:count]
     except Exception as e:
         print(f"Error: {e}")

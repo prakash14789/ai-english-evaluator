@@ -9,7 +9,7 @@ import os
 import torch
 
 # Load model (GPU if available, else CPU)
-def load_whisper_model(model_size="tiny"):
+def load_whisper_model(model_size="tiny.en"):
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         audio_file = os.path.join(root_dir, "sample.wav")
 
-    model = load_whisper_model("tiny")
+    model = load_whisper_model("tiny.en")
 
     if model:
         output = transcribe_audio(model, audio_file)

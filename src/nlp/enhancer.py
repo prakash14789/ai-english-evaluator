@@ -16,103 +16,74 @@ def get_local_evaluator():
 
 def enhance_speech(text, question=None):
     """
-    Analyzes spoken English and returns a structured dict with:
-    - original: the raw transcript
-    - mistakes: list of identified errors
-    - improved: the corrected, professional version
-    - relevancy: feedback on whether the answer matched the question
-    - score: a realistic score out of 10
+    Analyzes spoken English and returns a comprehensive structured dict.
+    Consolidates Grammar, Vocabulary, and Relevancy into one call for speed.
     """
-    # Read API key fresh every call to avoid stale module-level None
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         genai.configure(api_key=api_key)
-
-    fallback = {
-        "original": text,
-        "mistakes": ["Could not analyze. GEMINI_API_KEY is not set in your environment."],
-        "improved": text,
-        "relevancy": "Analysis skipped.",
-        "score": "0"
-    }
 
     # Decide whether to use local model or API
     use_local = os.getenv("USE_LOCAL_MODEL", "false").lower() == "true"
     
     if not api_key or use_local:
-        if not use_local:
-            print("GEMINI_API_KEY not found. Using local AI model for evaluation...")
-        else:
-            print("USE_LOCAL_MODEL is set. Using local AI model...")
-            
         try:
             local_eval = get_local_evaluator()
             return local_eval.evaluate(text, question)
         except Exception as e:
             print(f"Local model error: {e}")
             if not api_key:
-                return fallback
-            # If local fails but API key exists, continue to API below
+                return {"original": text, "mistakes": ["Key missing"], "improved": text, "score": "0"}
 
     try:
         model = genai.GenerativeModel("gemini-flash-latest")
 
         prompt = f"""
-        You are an English grammar evaluator.
-        
-        Given a sentence (converted from speech), do the following:
-        1. Correct the grammar.
-        2. List the mistakes and their corrections.
-        3. Give a grammar score out of 10 based on correctness and fluency.
-        
-        Input text: "{text}"
-        {"Question asked: " + question if question else ""}
-        
-        Keep the response short and structured in JSON format:
+        Analyze this spoken English text: "{text}"
+        {"Target Topic: " + question if question else ""}
+
+        Perform a deep analysis and return ONLY a JSON object with:
+        1. "corrected": A 10/10 professional version of the text.
+        2. "mistakes": List of specific grammar/style mistakes found.
+        3. "vocab_level": CEFR Level (A1-C2).
+        4. "vocab_suggestions": List of 2-3 word upgrades ({{ "original": "...", "improved": "...", "improved_sentence": "..." }}).
+        5. "relevancy": 1-sentence feedback on topic matching.
+        6. "score": A numeric score out of 10.
+
+        Response format:
         {{
           "corrected": "...",
-          "mistakes": [
-            {{"original": "...", "correction": "..."}}
-          ],
+          "mistakes": ["..."],
+          "vocab_level": "...",
+          "vocab_suggestions": [{{...}}],
           "relevancy": "...",
-          "score": ...
+          "score": 8.5
         }}
-        
-        Note: The 'relevancy' field should evaluate if the response matches the question (if provided).
-        Only return JSON. Do not add explanations outside the JSON.
         """
 
         response = model.generate_content(
             prompt,
-            generation_config={
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
-            }
+            generation_config={"temperature": 0.1, "response_mime_type": "application/json"}
         )
 
         import json
-        try:
-            data = json.loads(response.text.strip())
-        except Exception as e:
-            print(f"JSON Parse Error: {e}")
-            fallback["mistakes"] = ["Failed to parse AI response."]
-            return fallback
-
-        # Map JSON keys to the internal app keys
-        mistakes_list = []
-        for m in data.get("mistakes", []):
-            if isinstance(m, dict):
-                mistakes_list.append(f"You said: \"{m.get('original', '')}\" -> Correction: \"{m.get('correction', '')}\"")
-            else:
-                mistakes_list.append(str(m))
-
+        data = json.loads(response.text.strip())
+        
         return {
             "original": text,
-            "mistakes": mistakes_list if mistakes_list else ["No specific mistakes identified."],
+            "mistakes": data.get("mistakes", []),
             "improved": data.get("corrected", text),
-            "relevancy": data.get("relevancy", "Excellent, you answered the topic."),
-            "score": str(data.get("score", "N/A"))
+            "relevancy": data.get("relevancy", "Relevant."),
+            "score": str(data.get("score", "N/A")),
+            "vocab": {
+                "level": data.get("vocab_level", "B1"),
+                "suggestions": data.get("vocab_suggestions", [])
+            }
         }
+
+    except Exception as e:
+        print(f"Error in Consolidated Enhancer: {e}")
+        return {"original": text, "mistakes": [f"Error: {e}"], "improved": text, "score": "0", "vocab": {"level": "B1", "suggestions": []}}
 
     except Exception as e:
         print(f"Error in Enhancer: {e}")

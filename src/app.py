@@ -112,7 +112,7 @@ st.title("🎙️ AI English Evaluator")
 # Load Models and Resource Caching
 @st.cache_resource
 def get_whisper_model():
-    return load_whisper_model("tiny")
+    return load_whisper_model("tiny.en")
 
 # Pre-load the models to a cached object
 whisper_model = get_whisper_model()
@@ -207,19 +207,17 @@ if st.session_state.app_mode == "Interview Session":
                         if transcription and transcription["text"].strip():
                             text = transcription["text"].strip()
                             
-                            # Evaluate individual answer
-                            grammar_result = evaluate_grammar(text)
-                            vocab_result = analyze_vocabulary(text)
+                            # Consolidated Analysis (One call for everything: Grammar, Vocab, Relevancy, Score)
+                            analysis_result = enhance_speech(text, question=instruction_for_ai)
                             fluency_result = calculate_fluency(transcription)
-                            polished_text = enhance_speech(text, question=instruction_for_ai)
                             
                             # Store in session
                             st.session_state.responses.append(text)
                             st.session_state.evals.append({
-                                "grammar": grammar_result,
-                                "vocab": vocab_result,
+                                "grammar": {"score": float(analysis_result.get("score", 0)) if analysis_result.get("score", "0").replace(".", "").isdigit() else 0}, # Compatibility
+                                "vocab": analysis_result.get("vocab", {}),
                                 "fluency": fluency_result,
-                                "polished": polished_text
+                                "polished": analysis_result
                             })
                             
                             # Move to next
