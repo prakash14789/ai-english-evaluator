@@ -67,7 +67,15 @@ class LocalEnglishEvaluator:
             "mistakes": mistakes if mistakes else ["No major grammar mistakes detected."],
             "improved": improved_text,
             "relevancy": relevancy,
-            "score": str(score)
+            "score": str(score),
+            "lesson": {
+                "explanation": "Great job! To improve further, focus on sentence variety and using more descriptive adjectives.",
+                "exercises": [
+                    "Rewrite your answer using two synonyms.",
+                    "Try to use a 'because' or 'although' clause in your next answer.",
+                    "Practice saying the corrected version three times."
+                ]
+            }
         }
 
     def _extract_mistakes(self, original, corrected):

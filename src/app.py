@@ -19,7 +19,8 @@ from scoring.fluency import calculate_fluency
 from nlp.enhancer import enhance_speech
 from utils.question_generator import generate_questions
 from utils.image_task import get_image_task
-from utils.dashboard_plots import create_wpm_gauge, create_fluency_line_chart, create_vocabulary_sack
+from utils.dashboard_plots import create_wpm_gauge, create_fluency_line_chart, create_vocabulary_sack, create_history_chart
+from utils.progress_tracker import load_progress, save_progress, track_session, update_xp, get_stats
 
 # Page Configuration
 st.set_page_config(
@@ -43,6 +44,12 @@ if "questions" not in st.session_state:
     st.session_state.questions = []
 if "image_task" not in st.session_state:
     st.session_state.image_task = None
+if "track" not in st.session_state:
+    st.session_state.track = "General"
+if "api_key_input" not in st.session_state:
+    st.session_state.api_key_input = os.getenv("GEMINI_API_KEY", "")
+if "use_local_model" not in st.session_state:
+    st.session_state.use_local_model = os.getenv("USE_LOCAL_MODEL", "false").lower() == "true"
 
 TOTAL_QUESTIONS = 4
 
@@ -128,9 +135,32 @@ with st.sidebar:
         st.session_state.questions = []
         st.session_state.image_task = None
         st.rerun()
+
+    st.divider()
+    with st.expander("🛠️ Admin Panel"):
+        new_key = st.text_input("Gemini API Key", value=st.session_state.api_key_input, type="password")
+        if new_key != st.session_state.api_key_input:
+            st.session_state.api_key_input = new_key
+            os.environ["GEMINI_API_KEY"] = new_key
+            st.success("API Key updated!")
+            
+        use_local = st.checkbox("Use Local T5 Model (Fastest)", value=st.session_state.use_local_model)
+        if use_local != st.session_state.use_local_model:
+            st.session_state.use_local_model = use_local
+            os.environ["USE_LOCAL_MODEL"] = str(use_local).lower()
+            st.rerun()
+
+    st.divider()
+    stats = get_stats()
+    st.markdown(f"### 🔥 Streak: {stats['streak']} Days")
+    st.markdown(f"### ⭐ XP: {stats['xp']}")
+    if stats['badges']:
+        st.markdown("#### 🎖️ Badges")
+        for b in stats['badges']:
+            st.caption(b)
     
     st.divider()
-    st.info(f"Goal: Answer {TOTAL_QUESTIONS} questions (including 1 Image Task) to discover your English Archetype.")
+    st.info(f"Goal: Answer {TOTAL_QUESTIONS} questions (including 1 Image/Video Task) to discover your English Archetype.")
 
 # --- INTERVIEW SESSION MODE ---
 if st.session_state.app_mode == "Interview Session":
@@ -138,16 +168,18 @@ if st.session_state.app_mode == "Interview Session":
     if not st.session_state.session_active:
         st.markdown("""
         ### Welcome to the Archetype Assessment
-        We will ask you 3 conversational questions followed by a **final Image Description challenge**. 
-        Based on your vocabulary, grammar, and fluency across all 4 answers, our AI will determine your unique **English Speaking Archetype**.
+        Choose your track and complete the challenges to discover your unique **English Speaking Archetype**.
         """)
+        
+        st.session_state.track = st.selectbox("Select Interview Track", ["General", "Software Engineer", "IELTS Speaking", "Visa Interview"])
+        
         if st.button("🚀 Start Interview Session"):
             st.session_state.session_active = True
-            with st.spinner("Preparing interesting topics..."):
-                # Generate 3 conversational questions
-                st.session_state.questions = generate_questions(count=3, level="intermediate")
-                # Add a placeholder for the 4th (Image) task
-                st.session_state.questions.append("Image Description Task")
+            with st.spinner("Preparing specialized topics..."):
+                # Generate 3 conversational questions based on track
+                st.session_state.questions = generate_questions(count=3, level="intermediate", track=st.session_state.track)
+                # Add a placeholder for the 4th (Image/Video) task
+                st.session_state.questions.append("Visual Task")
                 st.session_state.image_task = get_image_task()
             st.rerun()
 
@@ -159,20 +191,25 @@ if st.session_state.app_mode == "Interview Session":
         st.markdown(f"<div class='progress-text'>Step {q_idx + 1} of {TOTAL_QUESTIONS}</div>", unsafe_allow_html=True)
         st.progress((q_idx) / TOTAL_QUESTIONS)
         
-        # Check if this is the final Image task
+        # Check if this is the final Visual task
         if q_idx == 3:
             task = st.session_state.image_task
+            task_type = task.get("type", "image")
+            
             st.markdown(f"""
             <div style="background-color: #1e222d; padding: 25px; border-radius: 15px; border: 1px solid #4F8BF9; margin-bottom: 25px;">
-                <h3 style="margin-top: 0; color: #4F8BF9;">Final Challenge: Image Description</h3>
+                <h3 style="margin-top: 0; color: #4F8BF9;">Final Challenge: {task_type.title()} Task</h3>
                 <p style="font-size: 1.2rem; font-weight: 500;">{task['instruction']}</p>
+                {f"<p style='color: #e74c3c; font-weight: bold;'>🎯 Challenge: {task['challenge']}</p>" if 'challenge' in task else ""}
             </div>
             """, unsafe_allow_html=True)
             
-            if os.path.exists(task['image_path']):
+            if task_type == "image" and os.path.exists(task['image_path']):
                 st.image(task['image_path'], use_container_width=True)
+            elif task_type == "video":
+                st.video(task['video_url'])
             
-            instruction_for_ai = f"Image description task. Instruction: {task['instruction']}. Scene details: {task['prompt_for_ai']}"
+            instruction_for_ai = f"Visual task ({task_type}). Instruction: {task['instruction']}. Context: {task['prompt_for_ai']}"
         else:
             current_q = st.session_state.questions[q_idx]
             st.markdown(f"""
@@ -238,11 +275,19 @@ if st.session_state.app_mode == "Interview Session":
         st.balloons()
         with st.spinner("Analyzing your profile..."):
             archetype_data = determine_archetype(st.session_state.responses)
+            
+            # Track Progress
+            avg_score = sum([e['grammar']['score'] for e in st.session_state.evals]) / TOTAL_QUESTIONS
+            total_duration = sum([e['fluency']['duration_sec'] for e in st.session_state.evals])
+            xp_earned = track_session(avg_score, archetype_data['archetype'], total_duration)
         
         st.markdown(f"""
         <div class="archetype-card">
             <h1 style="margin:0;">{archetype_data['archetype']}</h1>
             <p style="font-size: 1.2rem; opacity: 0.9;">Your Comprehensive Speech Analysis</p>
+            <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; display: inline-block; margin-top: 10px;">
+                ⭐ +{xp_earned} XP Earned
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -264,6 +309,11 @@ if st.session_state.app_mode == "Interview Session":
             # WPM Speedometer
             avg_wpm = sum([e['fluency']['wpm'] for e in st.session_state.evals]) / TOTAL_QUESTIONS
             st.plotly_chart(create_wpm_gauge(avg_wpm), use_container_width=True)
+            
+            # Archetype Evolution & Progress Chart
+            history_fig = create_history_chart(stats['history'][-7:]) # Last 7 sessions
+            if history_fig:
+                st.plotly_chart(history_fig, use_container_width=True)
             
             # Aggregated Speech Flow Data
             combined_timeline = []
@@ -353,6 +403,19 @@ if st.session_state.app_mode == "Interview Session":
                             <div style="background-color: #0e4b25; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #2ecc71;">
                                 <p style="margin: 0 0 8px 0; font-weight: bold; color: #2ecc71;">🏆 10/10 Professional Version:</p>
                                 <p style="margin: 0; font-style: italic; font-size: 1.05rem;">{improved}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        # --- Micro-Lesson ---
+                        lesson = enhancement.get("lesson", {})
+                        if lesson and lesson.get("explanation"):
+                            exercises_html = "".join([f"<li>📝 {ex}</li>" for ex in lesson.get("exercises", [])])
+                            st.markdown(f"""
+                            <div style="background-color: #1a1f2e; padding: 15px; border-radius: 10px; margin-top: 10px; border-left: 4px solid #9b59b6;">
+                                <p style="margin: 0 0 8px 0; font-weight: bold; color: #9b59b6;">📚 2-Minute Mini-Lesson:</p>
+                                <p style="margin: 0 0 10px 0; color: #dcdde1; font-style: italic;">{lesson['explanation']}</p>
+                                <p style="margin: 0 0 5px 0; font-weight: bold; color: #dcdde1; font-size: 0.9rem;">Practice Exercises:</p>
+                                <ul style="margin: 0; padding-left: 20px; color: #dcdde1; font-size: 0.9rem;">{exercises_html}</ul>
                             </div>
                             """, unsafe_allow_html=True)
 

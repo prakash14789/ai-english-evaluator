@@ -30,9 +30,9 @@ def clean_questions(raw_text):
 
 import google.generativeai as genai
 
-def generate_questions(count=3, level="intermediate"):
+def generate_questions(count=3, level="intermediate", track="General"):
     """
-    Generate unique spoken English questions using Gemini.
+    Generate unique spoken English questions using Gemini based on a specific track.
     """
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -43,9 +43,18 @@ def generate_questions(count=3, level="intermediate"):
     genai.configure(api_key=api_key)
     seed = random.randint(1, 10000)
 
+    track_prompts = {
+        "Software Engineer": "focused on technical interviews, SDLC, system design, and coding collaboration",
+        "IELTS Speaking": "strictly following the IELTS Speaking Part 1 and Part 3 format",
+        "Visa Interview": "focused on common questions asked by consulate officers for student or work visas",
+        "General": "conversational and general interest topics"
+    }
+
+    track_desc = track_prompts.get(track, track_prompts["General"])
+
     try:
         model = genai.GenerativeModel("gemini-flash-latest")
-        prompt = f"Seed: {seed}. List {count} unique conversational English questions for a {level} learner. One per line."
+        prompt = f"Seed: {seed}. List {count} unique conversational English questions for a {level} learner {track_desc}. One per line."
         
         response = model.generate_content(prompt)
         questions = clean_questions(response.text)
@@ -60,8 +69,8 @@ def generate_questions(count=3, level="intermediate"):
         random.shuffle(FALLBACK_QUESTIONS)
         return FALLBACK_QUESTIONS[:count]
 
-def generate_question(level="beginner"):
-    return generate_questions(count=1, level=level)[0]
+def generate_question(level="beginner", track="General"):
+    return generate_questions(count=1, level=level, track=track)[0]
 
 if __name__ == "__main__":
     print("\nGenerated Questions:\n")

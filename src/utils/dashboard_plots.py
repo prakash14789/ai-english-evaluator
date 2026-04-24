@@ -104,3 +104,37 @@ def create_vocabulary_sack(word_count, unique_words):
         margin=dict(l=20, r=20, t=40, b=20)
     )
     return fig
+
+def create_history_chart(history_data):
+    """
+    Creates a line chart showing progress over sessions.
+    """
+    if not history_data:
+        return None
+        
+    df = pd.DataFrame(history_data)
+    if df.empty:
+        return None
+        
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=df['date'], 
+        y=df['score'],
+        mode='lines+markers',
+        line=dict(color='#2ecc71', width=3),
+        marker=dict(size=10, color='#4F8BF9'),
+        name="Grammar Score"
+    ))
+
+    fig.update_layout(
+        title="Your Progress Over Time",
+        xaxis_title="Date",
+        yaxis_title="Score (0-10)",
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(14, 17, 23, 0.5)',
+        font={'color': "white"},
+        yaxis=dict(range=[0, 10.5]),
+        height=300,
+        margin=dict(l=20, r=20, t=50, b=20)
+    )
+    return fig

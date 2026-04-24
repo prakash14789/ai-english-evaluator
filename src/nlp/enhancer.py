@@ -49,6 +49,7 @@ def enhance_speech(text, question=None):
         4. "vocab_suggestions": List of 2-3 word upgrades ({{ "original": "...", "improved": "...", "improved_sentence": "..." }}).
         5. "relevancy": 1-sentence feedback on topic matching.
         6. "score": A numeric score out of 10.
+        7. "lesson": A 'Micro-Lesson' (2 sentences max) explaining the main grammar rule violated + 3 short practice exercises (questions) for the user.
 
         Response format:
         {{
@@ -57,7 +58,8 @@ def enhance_speech(text, question=None):
           "vocab_level": "...",
           "vocab_suggestions": [{{...}}],
           "relevancy": "...",
-          "score": 8.5
+          "score": 8.5,
+          "lesson": {{ "explanation": "...", "exercises": ["...", "...", "..."] }}
         }}
         """
 
@@ -78,7 +80,8 @@ def enhance_speech(text, question=None):
             "vocab": {
                 "level": data.get("vocab_level", "B1"),
                 "suggestions": data.get("vocab_suggestions", [])
-            }
+            },
+            "lesson": data.get("lesson", {"explanation": "Keep practicing!", "exercises": []})
         }
 
     except Exception as e:
